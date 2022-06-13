@@ -10,7 +10,7 @@
         <div id="chat-list">
             {% for chat in chats %} 
             {% if chat.user === user %} 
-                <div class="mine" style="color:{{chat.user}}">  <!-- mine: 내 메세지 -->
+                <div class="mine">  <!-- mine: 내 메세지 -->
                     <div>{{chat.user}}</div>
                     {% if chat.gif %}  
                         <img src="/gif/{{chat.gif}}">
@@ -23,7 +23,7 @@
                     <div>{{chat.chat}}</div>
                 </div>
             {% else %}
-                <div class="other" style="color:{{chat.user}}"> <!-- other: 남의 메세지 -->
+                <div class="other" > <!-- other: 남의 메세지 -->
                 <div>{{chat.user}}</div>
                 {% if chat.gif %} 
                     <img src="/gif/{{chat.gif}}">

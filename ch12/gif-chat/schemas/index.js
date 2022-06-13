@@ -2,7 +2,7 @@
 const mongoose = require('mongoose');
 
 const { MONGO_ID, MONGO_PASSWORD, NODE_ENV } = process.env; // 보안을 위해 정보 분리
-const MONGO_URL = `mongodb://${MONGO_ID}:${MONGO_PASSWORD}@127.0.0.1:27017/admin`;
+const MONGO_URL = 'mongodb+srv://suyeon5:clapkite@cluster0.gudegrd.mongodb.net/myuserdb';
 
 const connect = () => {
      // 배포 환경이 아닌 경우(ex. 개발 환경) debug를 세팅함 - 몽구스가 생성하는 쿼리를 콘솔에 출력

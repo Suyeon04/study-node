@@ -3,6 +3,7 @@ const SocketIO = require('socket.io');
 const axios= require('axios');
 const cookieParser = require('cookie-parser');
 const cookie = require('cookie-signature');
+const ios = require('express-socket.io-session');
 
 module.exports = (server, app, sessionMiddleware) => {
     const io = new SocketIO(server, { path: '/socket.io' }); // socket.io를 불러와 express와 연결
@@ -14,11 +15,7 @@ module.exports = (server, app, sessionMiddleware) => {
 
     // 모든 웹 소켓 연결 시마다 실행됨
     // 세션 미들웨어에 요청 객체(socket.request), 응답 객체(socket.request.res), next 함수를 인수로 넣으면 됨 
-    io.use((socket, next) => { // io 메서드에 미들웨어 장착 가능
-        cookieParser(process.env.COOKIE_SECRET)(socket.request, socket.request.res, next);
-        sessionMiddleware(socket.request, socket.request.res, next); // socket.request안에 socket.request.session 객체가 생성됨
-                                                                     // socket.request: 요청 객체, socket.request.res: 응답 객체
-    });
+    chat.use(ios(sessionMiddleware, {autoSave: true}))
 
     // 웹 소켓 연결 후 이벤트 리스너를 붙힘
     // io(room, chat)와 socket객체가 Socket.IO의 핵심임
@@ -47,7 +44,7 @@ module.exports = (server, app, sessionMiddleware) => {
 
             socket.to(roomId).emit('join', { // socket.to(방 아이디) 메서드: 특정 방에 데이터를 보낼 수 있음
                 user: 'system',
-                chat: `${req.session.color}님이 입장하셨습니다.`,
+                chat: `${socket.handshake.session.color}님이 입장하셨습니다.`,
             });
 
             // 접속 해제 시 
@@ -60,12 +57,11 @@ module.exports = (server, app, sessionMiddleware) => {
                 if (userCount === 0) { // 방에 인원수가 0명인 경우 
                     const signedCookie = req.signedCookies['connect.sid']; // req.signedCookies 내부의 쿠키들은 모두 복호화되어 있으므로 다시 암호화해서 요청에 담아보내야 함
                     const connectSID = cookie.sign(signedCookie, process.env.COOKIE_SECRET);
-                    axios.delete(`http://localhost:8005/room/${roomId}`, { // 서버에서 axios 요청 시 요청자가 누구인지에 대한 정보가 없음 (브라우저는 자동으로 쿠키를 같이 넣어 보냄)
-                                                                         // express-session에서는 세션 쿠키인 req.signedCookies['connect.sid']를 보고 현재 세션이 누구에게 속해있는지 판단함
-                        headers: {
-                            Cookie: `connect.sid=s%3A${connectSID}`, // s%3A 뒷 내용이 암호화된 내용, DELETE /room/:id 라우터에서 요청자가 누군지 확인 가능
-                        },
-                    })  
+                    axios.delete(`http://localhost:8005/room/${roomId}`, {
+                    headers: {
+                        Cookie: socket.handshake.headers.cookie,
+                    },
+                    }) 
                         .then(() => {
                             console.log('방 제거 요청 성공'); 
                         })
@@ -75,7 +71,7 @@ module.exports = (server, app, sessionMiddleware) => {
                 } else { // 방에 인원수가 0명이 아닌 경우 - 방에 있는 사람에게 퇴장 메세지 보냄(system)
                     socket.to(roomId).emit('exit', {
                         user: 'system',
-                        chat: `${req.session.color}님이 퇴장하셨습니다.`,
+                        chat: `${socket.handshake.session.color}님이 퇴장하셨습니다.`,
                     });
                 }
             });

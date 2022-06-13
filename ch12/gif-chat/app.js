@@ -16,6 +16,7 @@ const connect = require('./schemas');
 const app = express();
 app.set('port', process.env.PORT || 8005); // 포트번호 설정
 app.set('view engine', 'html');
+app.use(session({ secret: 'somevalue' }));
 
 nunjucks.configure('views', {
     express: app,
